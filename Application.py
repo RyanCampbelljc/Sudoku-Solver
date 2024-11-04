@@ -14,5 +14,13 @@ class Application(tk.Tk):
         self.board_frame = Board(self, data['board1'])
         self.board_frame.grid(row=0, column=0, padx=15, pady=15,sticky='nsew')
 
-        self.entry_btn = tk.Button(self, text="Start")
+        self.entry_btn = tk.Button(self, text="Start", command=self.solveBoard)
         self.entry_btn.grid(row=1, column=0)
+
+        self.sections_btn = tk.Button(self, text="check sections", command=self.board_frame.areSubsectionValid)
+        self.sections_btn.grid(row=2, column=0)
+
+    def solveBoard(self):
+        self.board_frame.disableBoard()
+        self.board_frame.solveBoard()
+        self.entry_btn.config(state="disabled")
