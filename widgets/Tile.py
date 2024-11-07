@@ -10,7 +10,7 @@ class Tile(tk.Entry):
             self.locked = False
         self.config(disabledforeground="black")
         self.grid(row=0,column=0, padx=padx, pady=pady,sticky="nsew")
-        self.S_Game_Started = False
+        self.solvingStarted = False
         self.updateTextField()
         self.bind("<KeyRelease>", self.userChangedValue)
         
@@ -23,29 +23,42 @@ class Tile(tk.Entry):
     #updates the text field of this tile based on self.data
     def updateTextField(self):
         output = '' if self.data == 0 else (str)(self.data)
-        if self.S_Game_Started:
+        if self.solvingStarted:
             self.enableTile()
             self.config(fg="blue")
         super().delete(0, tk.END)
         super().insert(0, (str)(output))
-        if self.S_Game_Started:
+        if self.solvingStarted:
             self.disableTile()
         
 
     def userChangedValue(self, event=None):
-        if not self.S_Game_Started:
+        if not self.solvingStarted:
             print("called")
             text = super().get()
             lastChar = '' if text == '' else text[-1]
             if lastChar >= '1' and lastChar <= '9':
                 self.data = (int)(lastChar)
+            if lastChar == '':
+                self.data = 0
             self.updateTextField()
             
         
 
     def disableTile(self):
         self.config(state='readonly')
-        self.S_Game_Started = True
+        self.solvingStarted = True
     
     def enableTile(self):
         self.config(state='normal')
+        self.solvingStarted = False
+
+    def resetTile(self):
+        if not self.locked:
+            self.data = 0
+            self.updateTextField()
+    
+    def clearTile(self):
+        self.locked = False
+        self.data = 0
+        self.updateTextField()

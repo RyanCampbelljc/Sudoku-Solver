@@ -1,6 +1,9 @@
 import tkinter as tk
+import time
 from widgets.Tile import Tile
 
+#increments r,c to the next board position.
+#or out of bounds if necessary
 def incrementRowsAndColumns(r,c):
         if c < 8:
             c = c + 1
@@ -9,6 +12,8 @@ def incrementRowsAndColumns(r,c):
             c = 0
             r = r + 1
             return r,c
+#decrements r,c to the next board position.
+#or out of bounds if necessary
 def decrementRowsAndColumns(r,c):
         if c > 0:
             c = c - 1
@@ -25,9 +30,8 @@ class Board(tk.Frame):
         #j = row of board; i = col of board; x = row of subsection; y = col of subsection
         self.sections = [[BoardSubsection(self,[[ boardData[x + 3*j][y + 3*i] for y in range(3)] for x in range (3)]) for i in range(3)] for j in range(3)]
         #want the tiles held in normal 2d array as well to make row/col checks easier
-        #3x3 array of subsections each with 3x3 array of tiles
-        # print(self.sections[0][0].tiles[0][0].data)
         self.tiles = [[self.sections[int(i/3)][int(j/3)].tiles[i%3][j%3] for j in range(9)]for i in range(9)]
+        self.debugValue = 0
         self.create_widgets()
  
     def create_widgets(self):
@@ -35,7 +39,7 @@ class Board(tk.Frame):
             for j in range(3):
                 self.sections[i][j].grid(row=i, column=j,padx=5,pady=5, sticky="nsew")
    
-    #if tile not locked place next lowest number in it
+    #if tile not locked place next lowest number in it.
     #check if row, col, and subsection is valid.
     #if yes move to next tile
     # if no try updating prior tile.
@@ -53,18 +57,12 @@ class Board(tk.Frame):
                     done = True
                     break
         direction = 1
-        # while(not(r >= 9 or r < 0 or c >= 9 or c < 0)):
         self.recurse(r,c,direction)
 
-    #alg doesnt work cause once you backtrack through the recursino you need to reset the foor loop but
-    #its already done at that point
-    #so rn as soon as  it gets to a point it needs to backtrack it finishes
-    #need while loop instead probably.
-    #in the recursion could have a while and the recurse function could return r,c to prvious thing
+
     def recurse(self, r, c, direction):
         #base case is index out of ranges
-        if r >= 9 or r < 0 or c >= 9 or c < 0:
-            print(r + " " + c)
+        if r >= 9 or r < 0:
             return False
         #if a tile is locked then move forward or backward depending on algs current direction
         reset = True
@@ -74,24 +72,26 @@ class Board(tk.Frame):
                 for i in range (9):# the possible numbers a tile could have
                     self.tiles[r][c].increment()
                     if self.isRowValid(r) and self.isColumnValid(c) and self.areSubsectionsValid():
-                        if self.tiles[r][c].data != 0: # 0 can be acceptable value if backtrack and work up until its back to 0 but shouldnt move forward still
+                        if self.tiles[r][c].data != 0: # 0 can be acceptable value if backtracking and work up until its back to 0 but shouldnt move forward still
                             direction = 1
                         break
-                    if i == 8:#need to reset value to 0 here
+                    if i == 8:#need to reset value to 0 here(no value was possible)
                         self.tiles[r][c].increment()
-                self.printBoard() #only print board if something change(ie not on locked tile)
+                # self.printBoard() #only print board if something change(ie not on locked tile)
+                self.updateUI()
 
             #decrement = go to last recursion
             
+            #return true so that the while loop runs again for prior tile
             if direction == -1:
                 return True
-            else:
-                r,c = incrementRowsAndColumns(r,c) 
             
+            r,c = incrementRowsAndColumns(r,c) 
             reset = self.recurse(r,c,direction)
             if reset:
                 r,c = decrementRowsAndColumns(r,c)#need r,c to be the i,j of this tile. (they wouldnt be since they were incremented before getting here)
-                direction = -1
+                direction = -1#assume backwords
+        
         return False
 
     
@@ -121,39 +121,7 @@ class Board(tk.Frame):
             for tile in row:
                 output = '-' if tile.data == 0 else tile.data
                 print(output,end = " ")
-    
-    # def areRowsValid(self):
-    #     numList = []
-    #     for row in self.tiles:
-    #         for tile in row:
-    #             data = tile.data
-    #             if data == 0:
-    #                 continue
-    #             if numList.count(data) > 0:
-    #                 print("invalid row")
-    #                 return False
-    #         else:
-    #             numList.append(data) 
-    #     print("valid row")
-    #     return True
-    
-
-    # def areColumnsValid(self):
-    #     numList = []
-    #     for col in range(9):
-    #         for row in range(9):
-    #             data = self.tiles[row][col]
-    #             if data == 0:
-    #                 continue
-    #             if numList.count(data) > 0:
-    #                 print("invalid column")
-    #                 return False
-    #         else:
-    #             numList.append(data) 
-    #     print("valid column")
-    #     return True
-
-    
+  
     def isRowValid(self,row):
         numList = []
         for tile in self.tiles[row]:
@@ -178,7 +146,32 @@ class Board(tk.Frame):
                 numList.append(data) 
         return True
 
-           
+    def isBoardValid(self):
+        for i in range(9):
+            if not self.isColumnValid(i) or not self.isRowValid(i):
+                return False
+        if not self.areSubsectionsValid():
+            return False
+        return True
+
+    def updateUI(self):
+        self.update_idletasks()#refreshes ui
+        if self.debugValue == 1:
+            self.after(300)
+
+    def updateDebugValue(self, value):
+        self.debugValue = value  
+        self.update() # refreshes ui and also processes user input
+    
+    def resetBoard(self):
+        for r in self.tiles:
+            for tile in r:
+                tile.resetTile()
+    
+    def clearBoard(self):
+        for r in self.tiles:
+            for tile in r:
+                tile.clearTile()
 
 #one of the 3x3 subsections of the suduko board.
 #makes it easy to place them in gui to easy to check validity
@@ -196,7 +189,7 @@ class BoardSubsection(tk.Frame):
             for c in r:
                 c.disableTile()
     def enableSubsection(self):
-        for r in self.sections:
+        for r in self.tiles:
             for c in r:
                 c.enableTile()
     def subsectionValid(self) -> bool:
