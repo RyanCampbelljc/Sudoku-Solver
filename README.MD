@@ -7,3 +7,6 @@ This is a Python-based Sudoku Solver and Visualizer built with Tkinter. The tool
 
 # Note
 This project is functional but I am still improving UI and and code layout in certain areas.
+
+# Demo
+https://github.com/RyanCampbelljc/Sudoku-Solver/blob/master/SudokuSolver.mp4
